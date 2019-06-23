@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 /**
  *	Definição do tamanho de cada bloco para Alocação contígua
@@ -29,15 +30,50 @@ int menu(char *cmd, char *title, char *content, int size);
  */
 int controlBuffer(char *buffer, char **cmd, char **title, char **content);
 
-void readFile();
+char* readDirectory(){
+	char *buffer, *bufferTmp, c;
+	bufferTmp = (char*)malloc(1024*sizeof(char));
 
-void writeFile();
+	FILE *directory = fopen("HD/directory", "r");
+
+	int i = 0;
+	while((c = fgetc(directory)) != EOF)
+    	bufferTmp[i++] = c;
+
+	fclose(directory);
+	buffer = (char*)malloc(strlen(bufferTmp)*sizeof(char));
+	free(bufferTmp);
+
+	return buffer;
+}
+
+void updateDirectory(char *content){
+	char *newBuffer;
+	char *buffer = readDirectory();
+
+	int tamBuffer = strlen(buffer) + strlen(content);
+	newBuffer = (char*)malloc(tamBuffer*sizeof(char));
+
+	strcpy(newBuffer, buffer);
+	strcat(newBuffer, content);
+
+	FILE *directory = fopen("HD/directory", "w");
+	fwrite(newBuffer, sizeof(char), strlen(newBuffer), directory);
+	fclose(directory);
+}
+
+void updateTableFile(char *title, int size){}
+
+void cat(char *title, char *content, int size){
+	updateTableFile(title, size);
+	updateDirectory(content);
+}
 
 int main(){
 	int flag = TRUE, statusBuffer;
 	char *buffer, *cmd, *title, *content;
 
-	info();
+	//info();
 	while(flag){
 		printf("$ ");
 		fflush(stdin);
@@ -52,7 +88,7 @@ int main(){
 			exit(ERROR);
 		}
 
-		printf("%s - %s - %s\n", cmd, title, content);
+		// printf("%s - %s - %s\n", cmd, title, content);
 	}
 
 	return 0;
@@ -77,7 +113,7 @@ int menu(char *cmd, char *title, char *content, int size){
 		system("clear");
 
 	else if(!strcmp(cmd,"cat"))
-		printf("cat not yet\n");
+		cat(title, content, size);
 	
 	else if(!strcmp(cmd,"ls"))
 		printf("ls not yet\n");
