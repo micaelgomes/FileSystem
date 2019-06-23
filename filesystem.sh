@@ -1,1 +1,1 @@
-g++ src/main.cpp -o bin/main && ./bin/main
+gcc src/main.c -o bin/main && ./bin/main
