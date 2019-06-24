@@ -36,6 +36,32 @@ char* readTable();
 
 char* updateTableFile(char *title, int size);
 
+int getLastFree(){
+	char* table = readTable();
+	char *token, *arquivo;
+	char **arquivoDadoSplit = (char **) malloc(3 * sizeof(char *));
+	if (!arquivoDadoSplit)
+		return -1;
+	int i = 0;
+	token = strtok(table, "[");
+	while (token != NULL){
+		arquivo = token;
+		token = strtok(NULL, "[");
+	}
+
+	arquivo[strlen(arquivo) - 1] = '\0';
+	printf("-> %s\n", arquivo);
+
+	i = 0;
+	token = strtok(arquivo, ",");
+	while (token != NULL){
+		arquivoDadoSplit[i++] = token;
+		token = strtok(NULL, ",");
+	}
+
+	return atoi(arquivoDadoSplit[1]) + atoi(arquivoDadoSplit[2]);
+}
+
 void cat(char *title, char *content, int size);
 
 void ls();
@@ -167,17 +193,18 @@ char* readTable(){
 }
 
 char* updateTableFile(char *title, int size){
-	char *newTable, *newTableTmp, extQuantBlock[2];
+	char *newTable, *newTableTmp, extQuantBlock[2], extLastFree[2];
 	newTableTmp = (char*)malloc(10000*sizeof(char));
 
 	char *table = readTable();
 	int quantBlock = (size/TAM_BLOCK) + 1;
 	sprintf(extQuantBlock, "%d", quantBlock);
+	sprintf(extLastFree, "%d", getLastFree());
 
 	strcpy(newTableTmp, "[");
 	strcat(newTableTmp, title);
 	strcat(newTableTmp, ",");
-	strcat(newTableTmp, "0");
+	strcat(newTableTmp, extLastFree);
 	strcat(newTableTmp, ",");
 	strcat(newTableTmp, extQuantBlock);
 	strcat(newTableTmp, "]");
