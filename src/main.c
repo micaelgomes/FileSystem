@@ -30,50 +30,21 @@ int menu(char *cmd, char *title, char *content, int size);
  */
 int controlBuffer(char *buffer, char **cmd, char **title, char **content);
 
-char* readDirectory(){
-	char *buffer, *bufferTmp, c;
-	bufferTmp = (char*)malloc(1024*sizeof(char));
+char* readDirectory();
 
-	FILE *directory = fopen("HD/directory", "r");
+char* readTable();
 
-	int i = 0;
-	while((c = fgetc(directory)) != EOF)
-    	bufferTmp[i++] = c;
+char* updateTableFile(char *title, int size);
 
-	fclose(directory);
-	buffer = (char*)malloc(strlen(bufferTmp)*sizeof(char));
-	free(bufferTmp);
+void cat(char *title, char *content, int size);
 
-	return buffer;
-}
-
-void updateDirectory(char *content){
-	char *newBuffer;
-	char *buffer = readDirectory();
-
-	int tamBuffer = strlen(buffer) + strlen(content);
-	newBuffer = (char*)malloc(tamBuffer*sizeof(char));
-
-	strcpy(newBuffer, buffer);
-	strcat(newBuffer, content);
-
-	FILE *directory = fopen("HD/directory", "w");
-	fwrite(newBuffer, sizeof(char), strlen(newBuffer), directory);
-	fclose(directory);
-}
-
-void updateTableFile(char *title, int size){}
-
-void cat(char *title, char *content, int size){
-	updateTableFile(title, size);
-	updateDirectory(content);
-}
+void ls();
 
 int main(){
 	int flag = TRUE, statusBuffer;
 	char *buffer, *cmd, *title, *content;
 
-	//info();
+	info();
 	while(flag){
 		printf("$ ");
 		fflush(stdin);
@@ -87,8 +58,6 @@ int main(){
 			printf("Buffer ERROR\n");
 			exit(ERROR);
 		}
-
-		// printf("%s - %s - %s\n", cmd, title, content);
 	}
 
 	return 0;
@@ -97,7 +66,7 @@ int main(){
 void info(){
 	system("clear");
 	printf("## Virtual - FileSystem ##\n\n");
-	printf("Options: \n- cat \n- ls \n- more \n- clear \n- exit\n\n\n");
+	printf("Options: \n- cat namefile content \n- ls \n- more namefile \n- clear \n- exit\n\n\n");
 	printf("Press ENTER key to continue...\n");
 	getchar();
 	system("clear");
@@ -116,7 +85,7 @@ int menu(char *cmd, char *title, char *content, int size){
 		cat(title, content, size);
 	
 	else if(!strcmp(cmd,"ls"))
-		printf("ls not yet\n");
+		ls();
 
 	else if(!strcmp(cmd,"more"))
 		printf("more not yet\n");
@@ -146,4 +115,102 @@ int controlBuffer(char *buffer, char **cmd, char **title, char **content){
 	}
 
 	return FALSE;
+}
+
+/* CAT */
+char* readDirectory(){
+	char *buffer, *bufferTmp, c;
+	bufferTmp = (char*)malloc(100000*sizeof(char));
+
+	FILE *directory = fopen("HD/directory", "r");
+
+	int i = 0, flag = FALSE;
+	while((c = fgetc(directory)) != EOF){
+		if(c == '@')
+			flag = TRUE;
+		if(flag){
+    		bufferTmp[i] = c;
+    		i++;
+		}
+	}
+
+	fclose(directory);
+	buffer = (char*)malloc(strlen(bufferTmp)*sizeof(char));
+	strcpy(buffer, bufferTmp);
+	free(bufferTmp);
+
+	return buffer;
+}
+
+char* readTable(){
+	char *table, *tableTmp, c;
+	tableTmp = (char*)malloc(1000*sizeof(char));
+
+	FILE *directory = fopen("HD/directory", "r");
+
+	int i = 0, flag = TRUE;
+	while((c = fgetc(directory)) != EOF){
+		if(c == '@')
+			flag = FALSE;
+		if(flag){
+    		tableTmp[i] = c;
+    		i++;
+		}
+	}
+
+	fclose(directory);
+	table = (char*)malloc(strlen(tableTmp)*sizeof(char));
+	strcpy(table, tableTmp);
+	free(tableTmp);
+
+	return table;
+}
+
+char* updateTableFile(char *title, int size){
+	char *newTable, *newTableTmp, extQuantBlock[2];
+	newTableTmp = (char*)malloc(10000*sizeof(char));
+
+	char *table = readTable();
+	int quantBlock = (size/TAM_BLOCK) + 1;
+	sprintf(extQuantBlock, "%d", quantBlock);
+
+	strcpy(newTableTmp, "[");
+	strcat(newTableTmp, title);
+	strcat(newTableTmp, ",");
+	strcat(newTableTmp, "0");
+	strcat(newTableTmp, ",");
+	strcat(newTableTmp, extQuantBlock);
+	strcat(newTableTmp, "]");
+
+	int tamTable = strlen(newTableTmp) + strlen(table);
+	newTable = (char*)malloc(tamTable*sizeof(char));
+	
+	strcpy(newTable, table);	
+	strcat(newTable, newTableTmp);
+	free(newTableTmp);
+
+	return newTable;
+}
+
+void cat(char *title, char *content, int size){
+	char *newBuffer;
+	char *table = updateTableFile(title, size);
+	char *buffer = readDirectory();
+
+	int tamBuffer = strlen(table) + strlen(buffer) + strlen(content);
+	newBuffer = (char*)malloc(tamBuffer*sizeof(char));
+
+	strcpy(newBuffer, table);
+	strcat(newBuffer, buffer);
+	strcat(newBuffer, content);
+
+	FILE *directory = fopen("HD/directory", "w");
+	fwrite(newBuffer, sizeof(char), strlen(newBuffer), directory);
+	fclose(directory);
+}
+
+/* LS */
+void ls(){
+	char *table = readTable();
+	printf("%s\n", table);
 }
