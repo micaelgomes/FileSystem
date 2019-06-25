@@ -42,39 +42,7 @@ void cat(char *title, char *content);
 
 void ls();
 
-void more(char *title){
-	if(title != NULL){
-		char c, *result, *token, *table = readTable(), *directory = readDirectory();
-		int pos, offset;
-
-		if(table != NULL)
-			result = strstr(table, title);
-
-		if(!(result != NULL)){
-			printf("Arquivo não encontrado\n");
-			return;
-		}
-
-		token = strtok(result, ",");
-		token = strtok(NULL, ",");
-		pos = atoi(token);
-		token = strtok(NULL, "]");
-		offset = atoi(token);
-
-		// printf("pos: %d off: %d\n", pos, offset);
-		// printf("%s\n", directory);
-
-		int i = pos;
-		while(i<=offset){
-			printf("%c", directory[i]);
-			i++;
-		}
-		printf("\n");
-
-	} else {
-		printf("Qual arquivo?\n");
-	}
-}
+void more(char *title);
 
 int main(){
 	int flag = TRUE, statusBuffer;
@@ -204,12 +172,11 @@ char* readTable(){
 }
 
 char* updateTableFile(char *title, int size){
-	char *newTable, *newTableTmp, extQuantBlock[2], extLastFree[2];
+	char *newTable, *newTableTmp, extQuantBlock[5], extLastFree[5];
 	newTableTmp = (char*)malloc(10000*sizeof(char));
 
 	char *table = readTable();
-	int quantBlock = size;
-	sprintf(extQuantBlock, "%d", quantBlock);
+	sprintf(extQuantBlock, "%d", size);
 	sprintf(extLastFree, "%d", getLastFree());
 
 	strcpy(newTableTmp, "[");
@@ -295,3 +262,36 @@ void ls(){
 }
 
 /* MORE */
+void more(char *title){
+	if(title != NULL){
+		char c, *result, *token, *table = readTable(), *directory = readDirectory();
+		int pos, offset;
+
+		if(table != NULL)
+			result = strstr(table, title);
+
+		if(!(result != NULL)){
+			printf("Arquivo não encontrado\n");
+			return;
+		}
+
+		token = strtok(result, ",");
+		token = strtok(NULL, ",");
+		pos = atoi(token);
+		token = strtok(NULL, "]");
+		offset = atoi(token);
+
+		// printf("pos: %d off: %d\n", pos, offset);
+		// printf("%s\n", directory);
+
+		int i = pos;
+		while(i<=offset){
+			printf("%c", directory[i]);
+			i++;
+		}
+		printf("\n");
+
+	} else {
+		printf("Qual arquivo?\n");
+	}
+}
