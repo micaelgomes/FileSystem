@@ -5,10 +5,10 @@
 
 /**
  *	Definição do tamanho de cada bloco para Alocação contígua
- *	Neste caso será de 4 bytes, para ser possível observar a organização
+ *	Neste caso será de 1 bytes, para ser possível observar a organização
  *	em blocos sem precisar de um arquivo muito grande
  */
-#define TAM_BLOCK 4
+#define TAM_BLOCK 1
 
 #define TRUE 1
 #define FALSE 0
@@ -22,7 +22,7 @@ void info();
 /**
  * Controla a execução dos comandos, além de finalizar o programa
  */
-int menu(char *cmd, char *title, char *content, int size);
+int menu(char *cmd, char *title, char *content);
 
 /**
  * Controla o buffer e a divisão do argumentos
@@ -36,35 +36,45 @@ char* readTable();
 
 char* updateTableFile(char *title, int size);
 
-int getLastFree(){
-	char* table = readTable();
-	char *token, *arquivo;
-	char **arquivoDadoSplit = (char **) malloc(3 * sizeof(char *));
-	if (!arquivoDadoSplit)
-		return -1;
-	int i = 0;
-	token = strtok(table, "[");
-	while (token != NULL){
-		arquivo = token;
-		token = strtok(NULL, "[");
-	}
+int getLastFree();
 
-	arquivo[strlen(arquivo) - 1] = '\0';
-	printf("-> %s\n", arquivo);
-
-	i = 0;
-	token = strtok(arquivo, ",");
-	while (token != NULL){
-		arquivoDadoSplit[i++] = token;
-		token = strtok(NULL, ",");
-	}
-
-	return atoi(arquivoDadoSplit[1]) + atoi(arquivoDadoSplit[2]);
-}
-
-void cat(char *title, char *content, int size);
+void cat(char *title, char *content);
 
 void ls();
+
+void more(char *title){
+	if(title != NULL){
+		char c, *result, *token, *table = readTable(), *directory = readDirectory();
+		int pos, offset;
+
+		if(table != NULL)
+			result = strstr(table, title);
+
+		if(!(result != NULL)){
+			printf("Arquivo não encontrado\n");
+			return;
+		}
+
+		token = strtok(result, ",");
+		token = strtok(NULL, ",");
+		pos = atoi(token);
+		token = strtok(NULL, "]");
+		offset = atoi(token);
+
+		// printf("pos: %d off: %d\n", pos, offset);
+		// printf("%s\n", directory);
+
+		int i = pos;
+		while(i<=offset){
+			printf("%c", directory[i]);
+			i++;
+		}
+		printf("\n");
+
+	} else {
+		printf("Qual arquivo?\n");
+	}
+}
 
 int main(){
 	int flag = TRUE, statusBuffer;
@@ -78,12 +88,13 @@ int main(){
 		statusBuffer = controlBuffer(buffer, &cmd, &title, &content);
 
 		if(statusBuffer){
-			flag = menu(cmd, title, content, sizeof(content));
+			flag = menu(cmd, title, content);
 			getchar();
 		} else {
-			printf("Buffer ERROR\n");
-			exit(ERROR);
+			getchar();
 		}
+
+		strcpy(buffer, "");
 	}
 
 	return 0;
@@ -98,7 +109,7 @@ void info(){
 	system("clear");
 }
 
-int menu(char *cmd, char *title, char *content, int size){
+int menu(char *cmd, char *title, char *content){
 	int flag = TRUE;
 
 	if(!strcmp(cmd,"exit"))
@@ -108,13 +119,13 @@ int menu(char *cmd, char *title, char *content, int size){
 		system("clear");
 
 	else if(!strcmp(cmd,"cat"))
-		cat(title, content, size);
+		cat(title, content);
 	
 	else if(!strcmp(cmd,"ls"))
 		ls();
 
 	else if(!strcmp(cmd,"more"))
-		printf("more not yet\n");
+		more(title);
 
 	else 
 		printf("ERRO:: Command Not Found:: %s\n", cmd);
@@ -123,7 +134,7 @@ int menu(char *cmd, char *title, char *content, int size){
 }	
 
 int controlBuffer(char *buffer, char **cmd, char **title, char **content){
-	if(buffer != NULL){
+	if(strlen(buffer)){
 		const char delimiter[2] = " ";
 		const char end[2] = "\0";
 		char *token;
@@ -197,7 +208,7 @@ char* updateTableFile(char *title, int size){
 	newTableTmp = (char*)malloc(10000*sizeof(char));
 
 	char *table = readTable();
-	int quantBlock = (size/TAM_BLOCK) + 1;
+	int quantBlock = size;
 	sprintf(extQuantBlock, "%d", quantBlock);
 	sprintf(extLastFree, "%d", getLastFree());
 
@@ -219,25 +230,68 @@ char* updateTableFile(char *title, int size){
 	return newTable;
 }
 
-void cat(char *title, char *content, int size){
-	char *newBuffer;
-	char *table = updateTableFile(title, size);
-	char *buffer = readDirectory();
+int getLastFree(){
+	char *table = readTable();
+	char *token, *arquivo;
+	char **arquivoDadoSplit = (char **) malloc(3 * sizeof(char *));
+	if (!arquivoDadoSplit)
+		return ERROR;
 
-	int tamBuffer = strlen(table) + strlen(buffer) + strlen(content);
-	newBuffer = (char*)malloc(tamBuffer*sizeof(char));
+	int i = 0;
+	token = strtok(table, "[");
+	while (token != NULL){
+		arquivo = token;
+		token = strtok(NULL, "[");
+	}
 
-	strcpy(newBuffer, table);
-	strcat(newBuffer, buffer);
-	strcat(newBuffer, content);
+	arquivo[strlen(arquivo) - 1] = '\0';
 
-	FILE *directory = fopen("HD/directory", "w");
-	fwrite(newBuffer, sizeof(char), strlen(newBuffer), directory);
-	fclose(directory);
+	i = 0;
+	token = strtok(arquivo, ",");
+	while (token != NULL){
+		arquivoDadoSplit[i++] = token;
+		token = strtok(NULL, ",");
+	}
+
+	return atoi(arquivoDadoSplit[1]) + atoi(arquivoDadoSplit[2]);
+}
+
+void cat(char *title, char *content){
+	if(title != NULL){
+		char *newBuffer;
+		char *table = updateTableFile(title, strlen(content));
+		char *buffer = readDirectory();
+
+		int tamBuffer = strlen(table) + strlen(buffer) + strlen(content);
+		newBuffer = (char*)malloc(tamBuffer*sizeof(char));
+
+		strcpy(newBuffer, table);
+		strcat(newBuffer, buffer);
+		strcat(newBuffer, content);
+
+		FILE *directory = fopen("HD/directory", "w");
+		fwrite(newBuffer, sizeof(char), strlen(newBuffer), directory);
+		fclose(directory);
+	} else {
+		printf("Sem título.\n");
+	}
 }
 
 /* LS */
 void ls(){
 	char *table = readTable();
-	printf("%s\n", table);
+	int i = 0, tam = strlen(table);
+
+	while(i<tam){
+		if(table[i] == '[' || table[i] == ',' || ( table[i] >= '0' && table[i] <= '9')){}
+		else if(table[i] == ']')
+			printf(" ");
+		else
+			printf("%c", table[i]);
+
+		i++;
+	}
+	printf("\n");
 }
+
+/* MORE */
