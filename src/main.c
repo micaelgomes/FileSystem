@@ -5,8 +5,7 @@
 
 /**
  *	Definição do tamanho de cada bloco para Alocação contígua
- *	Neste caso será de 1 bytes, para ser possível observar a organização
- *	em blocos sem precisar de um arquivo muito grande
+ *	Neste caso será de 1 bytes
  */
 #define TAM_BLOCK 1
 
@@ -25,25 +24,47 @@ void info();
 int menu(char *cmd, char *title, char *content);
 
 /**
- * Controla o buffer e a divisão do argumentos
- * Auxilia os comandos separando o título do conteúdo
+ * lê e trata a String de entrada, dividindo comandos e parâmetros
  */
 int controlBuffer(char *buffer, char **cmd, char **title, char **content);
 
+/**
+ * Retorna o conteúdo do Arquivo
+ */
 char* readDirectory();
 
+/**
+ * Retorna a Tabela de endereço
+ */
 char* readTable();
 
+/**
+ * Atualiza a tabela de endereço, indexando o novo arquivo ao final da mesma
+ */
 char* updateTableFile(char *title, int size);
 
+/**
+ * Pega o último bloco livre para endereçar o próximo conteúdo
+ */
 int getLastFree();
 
+/**
+ * Cria o Arquivo no diretório
+ */
 void cat(char *title, char *content);
 
+/**
+ * Lista os Aquivos do diretório com base na tabela
+ */
 void ls();
 
+/**
+ * Exibi o conteúdo do Arquivo, recebe apenas o título como refência
+ */
 void more(char *title);
 
+
+// MAIN
 int main(){
 	int flag = TRUE, statusBuffer;
 	char *buffer, *cmd, *title, *content;
@@ -72,6 +93,7 @@ void info(){
 	system("clear");
 	printf("## Virtual - FileSystem ##\n\n");
 	printf("Options: \n- cat namefile content \n- ls \n- more namefile \n- clear \n- exit\n\n\n");
+	printf("\nOBS -> Evite números no título dos Arquivos e acentos.\n\n\n\n");
 	printf("Press ENTER key to continue...\n");
 	getchar();
 	system("clear");
@@ -125,7 +147,8 @@ int controlBuffer(char *buffer, char **cmd, char **title, char **content){
 /* CAT */
 char* readDirectory(){
 	char *buffer, *bufferTmp, c;
-	bufferTmp = (char*)malloc(100000*sizeof(char));
+	bufferTmp = (char*)malloc(8000*sizeof(char));
+	strcpy(bufferTmp, "");
 
 	FILE *directory = fopen("HD/directory", "r");
 
@@ -139,6 +162,9 @@ char* readDirectory(){
 		}
 	}
 
+	if(!strcmp(bufferTmp, ""))
+		strcpy(bufferTmp, "@");
+
 	fclose(directory);
 	buffer = (char*)malloc(strlen(bufferTmp)*sizeof(char));
 	strcpy(buffer, bufferTmp);
@@ -149,7 +175,7 @@ char* readDirectory(){
 
 char* readTable(){
 	char *table, *tableTmp, c;
-	tableTmp = (char*)malloc(1000*sizeof(char));
+	tableTmp = (char*)malloc(5000*sizeof(char));
 
 	FILE *directory = fopen("HD/directory", "r");
 
@@ -163,6 +189,9 @@ char* readTable(){
 		}
 	}
 
+	if(!strcmp(tableTmp, ""))
+		strcpy(tableTmp, "[]");
+
 	fclose(directory);
 	table = (char*)malloc(strlen(tableTmp)*sizeof(char));
 	strcpy(table, tableTmp);
@@ -173,7 +202,7 @@ char* readTable(){
 
 char* updateTableFile(char *title, int size){
 	char *newTable, *newTableTmp, extQuantBlock[5], extLastFree[5];
-	newTableTmp = (char*)malloc(10000*sizeof(char));
+	newTableTmp = (char*)malloc(5000*sizeof(char));
 
 	char *table = readTable();
 	sprintf(extQuantBlock, "%d", size);
@@ -192,7 +221,6 @@ char* updateTableFile(char *title, int size){
 	
 	strcpy(newTable, table);	
 	strcat(newTable, newTableTmp);
-	free(newTableTmp);
 
 	return newTable;
 }
@@ -250,10 +278,10 @@ void ls(){
 	int i = 0, tam = strlen(table);
 
 	while(i<tam){
-		if(table[i] == '[' || table[i] == ',' || ( table[i] >= '0' && table[i] <= '9')){}
-		else if(table[i] == ']')
+		if(table[i] == '[' || table[i] == ',' || table[i] == '@' || ( table[i] >= '0' && table[i] <= '9')){}
+		else if(table[i] == ']'){
 			printf(" ");
-		else
+		} else
 			printf("%c", table[i]);
 
 		i++;
@@ -264,7 +292,9 @@ void ls(){
 /* MORE */
 void more(char *title){
 	if(title != NULL){
-		char c, *result, *token, *table = readTable(), *directory = readDirectory();
+		char c, *result, *token, *table = readTable(), *directory;
+		directory = readDirectory();
+		
 		int pos, offset;
 
 		if(table != NULL)
@@ -281,11 +311,9 @@ void more(char *title){
 		token = strtok(NULL, "]");
 		offset = atoi(token);
 
-		// printf("pos: %d off: %d\n", pos, offset);
-		// printf("%s\n", directory);
-
 		int i = pos;
-		while(i<=offset){
+		int total = pos + offset;
+		while(i < total){
 			printf("%c", directory[i]);
 			i++;
 		}
