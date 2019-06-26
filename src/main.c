@@ -91,9 +91,10 @@ int main(){
 
 void info(){
 	system("clear");
-	printf("## Virtual - FileSystem ##\n\n");
+	printf("## Virtual - FileSystem ##\nv0.0.2\n\n");
 	printf("Options: \n- cat namefile content \n- ls \n- more namefile \n- clear \n- exit\n\n\n");
-	printf("\nOBS -> Evite números no título dos Arquivos e acentos.\n\n\n\n");
+	printf("\nOBS -> Evite números no título dos Arquivos e acentos.");
+	printf("\n    -> Eventualmente pode ocorrer erro por falta de memória.\n\n\n\n");
 	printf("Press ENTER key to continue...\n");
 	getchar();
 	system("clear");
@@ -147,8 +148,7 @@ int controlBuffer(char *buffer, char **cmd, char **title, char **content){
 /* CAT */
 char* readDirectory(){
 	char *buffer, *bufferTmp, c;
-	bufferTmp = (char*)malloc(8000*sizeof(char));
-	strcpy(bufferTmp, "");
+	bufferTmp = (char*)calloc(8000,sizeof(char));
 
 	FILE *directory = fopen("HD/directory", "r");
 
@@ -175,7 +175,7 @@ char* readDirectory(){
 
 char* readTable(){
 	char *table, *tableTmp, c;
-	tableTmp = (char*)malloc(5000*sizeof(char));
+	tableTmp = (char*)calloc(5000,sizeof(char));
 
 	FILE *directory = fopen("HD/directory", "r");
 
@@ -229,6 +229,7 @@ int getLastFree(){
 	char *table = readTable();
 	char *token, *arquivo;
 	char **arquivoDadoSplit = (char **) malloc(3 * sizeof(char *));
+
 	if (!arquivoDadoSplit)
 		return ERROR;
 
@@ -248,11 +249,13 @@ int getLastFree(){
 		token = strtok(NULL, ",");
 	}
 
-	return atoi(arquivoDadoSplit[1]) + atoi(arquivoDadoSplit[2]);
+	int lastPos = atoi(arquivoDadoSplit[1]) + atoi(arquivoDadoSplit[2]);
+
+	return lastPos;
 }
 
 void cat(char *title, char *content){
-	if(title != NULL){
+	if(title != NULL && content != NULL){
 		char *newBuffer;
 		char *table = updateTableFile(title, strlen(content));
 		char *buffer = readDirectory();
@@ -268,7 +271,7 @@ void cat(char *title, char *content){
 		fwrite(newBuffer, sizeof(char), strlen(newBuffer), directory);
 		fclose(directory);
 	} else {
-		printf("Sem título.\n");
+		printf("Sem título ou Sem conteúdo.\n");
 	}
 }
 
@@ -311,8 +314,8 @@ void more(char *title){
 		token = strtok(NULL, "]");
 		offset = atoi(token);
 
-		int i = pos;
-		int total = pos + offset;
+		int i = pos-1;
+		int total = pos + offset - 1;
 		while(i < total){
 			printf("%c", directory[i]);
 			i++;
